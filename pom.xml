@@ -6,7 +6,7 @@
 
     <groupId>com.danielfrak.code.keycloak.providers</groupId>
     <artifactId>keycloak-rest-provider</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.18.0</version>
     <properties>
         <java.version>11</java.version>
         <keycloak.version>18.0.0</keycloak.version>
@@ -18,6 +18,22 @@
 
         <jacoco.version>0.8.8</jacoco.version>
     </properties>
+
+    <repositories>
+        <repository>
+            <id>codeartifact</id>
+            <name>codeartifact</name>
+            <url>https://alayacare-406883902139.d.codeartifact.us-east-1.amazonaws.com/maven/alaya-maven/</url>
+        </repository>
+    </repositories>
+
+    <distributionManagement>
+         <repository>
+             <id>codeartifact</id>
+             <name>codeartifact</name>
+             <url>https://alayacare-406883902139.d.codeartifact.us-east-1.amazonaws.com/maven/alaya-maven/</url>
+         </repository>
+     </distributionManagement>
 
     <dependencyManagement>
         <dependencies>
