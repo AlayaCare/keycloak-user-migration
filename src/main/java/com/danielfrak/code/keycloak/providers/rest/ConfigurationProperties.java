@@ -21,6 +21,14 @@ public final class ConfigurationProperties {
     public static final String MIGRATE_UNMAPPED_ROLES_PROPERTY = "MIGRATE_UNMAPPED_ROLES";
     public static final String MIGRATE_UNMAPPED_GROUPS_PROPERTY = "MIGRATE_UNMAPPED_GROUPS";
 
+    public static boolean isTokenActivatedByDefault() {
+        return getDefaultToken() != null;
+    }
+
+    public static String getDefaultToken() {
+        return System.getenv("KEYCLOAK_AUTH_SHARED_SECRET");
+    }
+
     private static final List<ProviderConfigProperty> PROPERTIES = List.of(
             new ProviderConfigProperty(URI_PROPERTY,
                     "Rest client URI (required)",
@@ -29,11 +37,11 @@ public final class ConfigurationProperties {
             new ProviderConfigProperty(API_TOKEN_ENABLED_PROPERTY,
                     "Rest client Bearer token auth enabled",
                     "Enables Bearer token authentication for legacy user service",
-                    BOOLEAN_TYPE, false),
+                    BOOLEAN_TYPE, isTokenActivatedByDefault()),
             new ProviderConfigProperty(API_TOKEN_PROPERTY,
                     "Rest client Bearer token",
-                    "Bearer token",
-                    PASSWORD, null),
+                    "Bearer token override, if not using the default KEYCLOAK_AUTH_SHARED_SECRET",
+                    PASSWORD, getDefaultToken()),
             new ProviderConfigProperty(API_HTTP_BASIC_ENABLED_PROPERTY,
                     "Rest client basic auth enabled",
                     "Enables HTTP basic auth for legacy user service",
