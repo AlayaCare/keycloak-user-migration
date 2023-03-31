@@ -41,7 +41,7 @@ public final class ConfigurationProperties {
             new ProviderConfigProperty(API_TOKEN_PROPERTY,
                     "Rest client Bearer token",
                     "Bearer token override, if not using the default KEYCLOAK_AUTH_SHARED_SECRET",
-                    PASSWORD, getDefaultToken()),
+                    PASSWORD, null),
             new ProviderConfigProperty(API_HTTP_BASIC_ENABLED_PROPERTY,
                     "Rest client basic auth enabled",
                     "Enables HTTP basic auth for legacy user service",
