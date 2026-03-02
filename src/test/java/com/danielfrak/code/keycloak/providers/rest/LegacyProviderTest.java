@@ -71,6 +71,8 @@ class LegacyProviderTest {
                 .thenReturn(passwordPolicyManagerProvider);
         lenient().when(session.getContext())
                 .thenReturn(keycloakContext);
+        lenient().when(model.getConfig())
+                .thenReturn(new MultivaluedHashMap<>());
     }
 
     private void givenAuthenticationFlow() {
@@ -79,7 +81,7 @@ class LegacyProviderTest {
     }
 
     private void givenNonAuthenticationFlow() {
-        when(keycloakContext.getAuthenticationSession())
+        lenient().when(keycloakContext.getAuthenticationSession())
                 .thenReturn(null);
     }
 
