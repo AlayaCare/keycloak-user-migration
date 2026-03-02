@@ -10,6 +10,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SubjectCredentialManager;
@@ -17,6 +18,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
+import org.keycloak.sessions.AuthenticationSessionModel;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -26,6 +28,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.danielfrak.code.keycloak.providers.rest.ConfigurationProperties.AUTH_FLOW_ONLY_LOOKUP_PROPERTY;
 import static com.danielfrak.code.keycloak.providers.rest.ConfigurationProperties.USE_USER_ID_FOR_CREDENTIAL_VERIFICATION;
 import static java.util.Collections.emptySet;
 import static org.junit.jupiter.api.Assertions.*;
@@ -57,16 +60,38 @@ class LegacyProviderTest {
     @Mock
     private PasswordPolicyManagerProvider passwordPolicyManagerProvider;
 
+    @Mock
+    private KeycloakContext keycloakContext;
+
     @BeforeEach
     void setUp() {
         legacyProvider = new LegacyProvider(session, legacyUserService, userModelFactory, model);
 
         lenient().when(session.getProvider(PasswordPolicyManagerProvider.class))
                 .thenReturn(passwordPolicyManagerProvider);
+        lenient().when(session.getContext())
+                .thenReturn(keycloakContext);
+    }
+
+    private void givenAuthenticationFlow() {
+        when(keycloakContext.getAuthenticationSession())
+                .thenReturn(mock(AuthenticationSessionModel.class));
+    }
+
+    private void givenNonAuthenticationFlow() {
+        when(keycloakContext.getAuthenticationSession())
+                .thenReturn(null);
+    }
+
+    private void givenAuthFlowOnlyLookup(boolean enabled) {
+        var config = new MultivaluedHashMap<String, String>();
+        config.put(AUTH_FLOW_ONLY_LOOKUP_PROPERTY, List.of(String.valueOf(enabled)));
+        lenient().when(model.getConfig()).thenReturn(config);
     }
 
     @Test
     void shouldGetUserByUsername() {
+        givenAuthenticationFlow();
         final String username = "user";
         final LegacyUser user = new LegacyUser();
         when(legacyUserService.findByUsername(username))
@@ -81,6 +106,7 @@ class LegacyProviderTest {
 
     @Test
     void shouldReturnNullIfUserNotFoundByUsername() {
+        givenAuthenticationFlow();
         final String username = "user";
         when(legacyUserService.findByUsername(username))
                 .thenReturn(Optional.empty());
@@ -92,6 +118,7 @@ class LegacyProviderTest {
 
     @Test
     void shouldGetUserByEmail() {
+        givenAuthenticationFlow();
         final String email = "email";
         final LegacyUser user = new LegacyUser();
         when(legacyUserService.findByEmail(email))
@@ -106,6 +133,7 @@ class LegacyProviderTest {
 
     @Test
     void shouldReturnNullIfUserWithDuplicateIdExists() {
+        givenAuthenticationFlow();
         final String email = "email";
         final LegacyUser user = new LegacyUser();
         when(legacyUserService.findByEmail(email))
@@ -120,6 +148,7 @@ class LegacyProviderTest {
 
     @Test
     void shouldReturnNullIfUserNotFoundByEmail() {
+        givenAuthenticationFlow();
         final String username = "user";
         when(legacyUserService.findByEmail(username))
                 .thenReturn(Optional.empty());
@@ -127,6 +156,58 @@ class LegacyProviderTest {
         var result = legacyProvider.getUserByEmail(realmModel, username);
 
         assertNull(result);
+    }
+
+    @Test
+    void shouldSkipLegacyLookupByUsernameOutsideAuthFlow() {
+        givenNonAuthenticationFlow();
+
+        var result = legacyProvider.getUserByUsername(realmModel, "user");
+
+        assertNull(result);
+        verifyNoInteractions(legacyUserService, userModelFactory);
+    }
+
+    @Test
+    void shouldSkipLegacyLookupByEmailOutsideAuthFlow() {
+        givenNonAuthenticationFlow();
+
+        var result = legacyProvider.getUserByEmail(realmModel, "email@test.com");
+
+        assertNull(result);
+        verifyNoInteractions(legacyUserService, userModelFactory);
+    }
+
+    @Test
+    void shouldAllowLegacyLookupOutsideAuthFlowWhenSettingDisabled() {
+        givenNonAuthenticationFlow();
+        givenAuthFlowOnlyLookup(false);
+        final String username = "user";
+        final LegacyUser user = new LegacyUser();
+        when(legacyUserService.findByUsername(username))
+                .thenReturn(Optional.of(user));
+        when(userModelFactory.create(user, realmModel))
+                .thenReturn(userModel);
+
+        var result = legacyProvider.getUserByUsername(realmModel, username);
+
+        assertEquals(userModel, result);
+    }
+
+    @Test
+    void shouldAllowLegacyLookupByEmailOutsideAuthFlowWhenSettingDisabled() {
+        givenNonAuthenticationFlow();
+        givenAuthFlowOnlyLookup(false);
+        final String email = "email@test.com";
+        final LegacyUser user = new LegacyUser();
+        when(legacyUserService.findByEmail(email))
+                .thenReturn(Optional.of(user));
+        when(userModelFactory.create(user, realmModel))
+                .thenReturn(userModel);
+
+        var result = legacyProvider.getUserByEmail(realmModel, email);
+
+        assertEquals(userModel, result);
     }
 
     @Test

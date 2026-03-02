@@ -160,11 +160,37 @@ public class LegacyProvider implements UserStorageProvider,
 
     @Override
     public UserModel getUserByUsername(RealmModel realmModel, String username) {
+        if (shouldSkipLegacyLookup()) {
+            LOG.debugf("Skipping legacy user lookup outside authentication flow for: %s", username);
+            return null;
+        }
         return getUserModel(realmModel, username, () -> legacyUserService.findByUsername(username));
     }
 
     @Override
     public UserModel getUserByEmail(RealmModel realmModel, String email) {
+        if (shouldSkipLegacyLookup()) {
+            LOG.debugf("Skipping legacy user lookup outside authentication flow for: %s", email);
+            return null;
+        }
         return getUserModel(realmModel, email, () -> legacyUserService.findByEmail(email));
+    }
+
+    private boolean shouldSkipLegacyLookup() {
+        return isAuthFlowOnlyLookupEnabled() && !isAuthenticationFlow();
+    }
+
+    private boolean isAuthFlowOnlyLookupEnabled() {
+        var config = model.getConfig().getFirst(ConfigurationProperties.AUTH_FLOW_ONLY_LOOKUP_PROPERTY);
+        return config == null || Boolean.parseBoolean(config);
+    }
+
+    private boolean isAuthenticationFlow() {
+        try {
+            return session.getContext().getAuthenticationSession() != null;
+        } catch (Exception e) {
+            LOG.debug("Could not determine request context, assuming non-auth flow", e);
+            return false;
+        }
     }
 }

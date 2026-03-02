@@ -20,6 +20,7 @@ public final class ConfigurationProperties {
     public static final String GROUP_MAP_PROPERTY = "GROUP_MAP";
     public static final String MIGRATE_UNMAPPED_ROLES_PROPERTY = "MIGRATE_UNMAPPED_ROLES";
     public static final String MIGRATE_UNMAPPED_GROUPS_PROPERTY = "MIGRATE_UNMAPPED_GROUPS";
+    public static final String AUTH_FLOW_ONLY_LOOKUP_PROPERTY = "AUTH_FLOW_ONLY_LOOKUP";
 
     public static boolean isTokenActivatedByDefault() {
         return getDefaultToken() != null;
@@ -75,6 +76,11 @@ public final class ConfigurationProperties {
             new ProviderConfigProperty(MIGRATE_UNMAPPED_GROUPS_PROPERTY,
                     "Migrate unmapped groups",
                     "Whether or not to migrate groups not found in the field above",
+                    BOOLEAN_TYPE, true),
+            new ProviderConfigProperty(AUTH_FLOW_ONLY_LOOKUP_PROPERTY,
+                    "Restrict legacy lookup to authentication flows",
+                    "When enabled, legacy user lookups only occur during authentication flows. "
+                    + "This allows user creation via the admin API even if the user exists in the legacy system.",
                     BOOLEAN_TYPE, true)
     );
 
