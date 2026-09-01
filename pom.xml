@@ -28,7 +28,7 @@
         <repository>
             <id>codeartifact</id>
             <name>codeartifact</name>
-            <url>https://alayacare-406883902139.d.codeartifact.us-east-1.amazonaws.com/maven/alaya-maven/</url>
+            <url>https://alayacare-978518412025.d.codeartifact.us-east-1.amazonaws.com/maven/alaya-maven/</url>
         </repository>
     </repositories>
 
@@ -36,7 +36,7 @@
         <repository>
             <id>codeartifact</id>
             <name>codeartifact</name>
-            <url>https://alayacare-406883902139.d.codeartifact.us-east-1.amazonaws.com/maven/alaya-maven/</url>
+            <url>https://alayacare-978518412025.d.codeartifact.us-east-1.amazonaws.com/maven/alaya-maven/</url>
         </repository>
     </distributionManagement>
 
