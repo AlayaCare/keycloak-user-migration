@@ -16,6 +16,22 @@ This is a user migration plugin for Keycloak. Read more at:
 
 https://codesoapbox.dev/keycloak-user-migration
 
+## ACCloud package publish
+
+This fork adds AlayaCare-specific features (auth-flow-only federation, ENV-based bearer token).
+To publish to CodeArtifact:
+
+```bash
+export CODEARTIFACT_AUTH_TOKEN=$(aws codeartifact get-authorization-token \
+  --domain alayacare --domain-owner 406883902139 \
+  --region us-east-1 --query authorizationToken --output text)
+
+mvn deploy -s settings.xml
+```
+
+The `settings.xml` must include a `<server>` entry for `codeartifact` with `aws` as username
+and `${env.CODEARTIFACT_AUTH_TOKEN}` as password.
+
 ## Compatibility history
 
 *(`SNAPSHOT` means that the version is not yet released)*

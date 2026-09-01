@@ -40,7 +40,7 @@ public class LegacyProviderFactory implements UserStorageProviderFactory<LegacyP
         var userMigrationService = new UserMigrationService(restService, localUserLookup, userModelFactory, config);
         var credentialValidationService = new CredentialValidationService(session, restService, config);
 
-        return new LegacyProvider(userMigrationService, credentialValidationService, config);
+        return new LegacyProvider(session, userMigrationService, credentialValidationService, config);
     }
 
     @Override

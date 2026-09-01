@@ -38,4 +38,9 @@ public class MigrationConfiguration {
         var configValue = model.getConfig().getFirst(SEVER_FEDERATION_LINK);
         return configValue == null || Boolean.parseBoolean(configValue);
     }
+
+    public boolean isAuthFlowOnlyLookupEnabled() {
+        var configValue = model.getConfig().getFirst(AUTH_FLOW_ONLY_LOOKUP_PROPERTY);
+        return configValue == null || Boolean.parseBoolean(configValue);
+    }
 }

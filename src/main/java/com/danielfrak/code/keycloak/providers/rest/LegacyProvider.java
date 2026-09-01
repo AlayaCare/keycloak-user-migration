@@ -6,6 +6,7 @@ import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.credential.CredentialInputValidator;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
@@ -24,13 +25,16 @@ public class LegacyProvider implements UserStorageProvider,
 
     private static final Logger LOG = Logger.getLogger(LegacyProvider.class);
 
+    private final KeycloakSession session;
     private final UserMigrationService userMigrationService;
     private final CredentialValidationService credentialValidationService;
     private final MigrationConfiguration config;
 
-    public LegacyProvider(UserMigrationService userMigrationService,
+    public LegacyProvider(KeycloakSession session,
+                          UserMigrationService userMigrationService,
                           CredentialValidationService credentialValidationService,
                           MigrationConfiguration config) {
+        this.session = session;
         this.userMigrationService = userMigrationService;
         this.credentialValidationService = credentialValidationService;
         this.config = config;
@@ -110,14 +114,35 @@ public class LegacyProvider implements UserStorageProvider,
 
     @Override
     public UserModel getUserByUsername(RealmModel realmModel, String username) {
+        if (shouldSkipLegacyLookup()) {
+            LOG.debugf("Skipping legacy user lookup outside authentication flow for: %s", username);
+            return null;
+        }
         LOG.debugf("getUserByUsername called for username %s", username);
         return userMigrationService.getAndUpdateUserByUsername(realmModel, username);
     }
 
     @Override
     public UserModel getUserByEmail(RealmModel realmModel, String email) {
+        if (shouldSkipLegacyLookup()) {
+            LOG.debugf("Skipping legacy user lookup outside authentication flow for: %s", email);
+            return null;
+        }
         LOG.debugf("getUserByEmail called for email %s", email);
         return userMigrationService.getAndUpdateUserByEmail(realmModel, email);
+    }
+
+    private boolean shouldSkipLegacyLookup() {
+        return config.isAuthFlowOnlyLookupEnabled() && !isAuthenticationFlow();
+    }
+
+    private boolean isAuthenticationFlow() {
+        try {
+            return session.getContext().getAuthenticationSession() != null;
+        } catch (Exception e) {
+            LOG.debug("Could not determine request context, assuming non-auth flow", e);
+            return false;
+        }
     }
 
     @Override

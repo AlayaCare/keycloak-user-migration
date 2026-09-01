@@ -46,6 +46,9 @@ public class RestUserService implements LegacyUserService {
         var tokenAuthEnabled = Boolean.parseBoolean(model.getConfig().getFirst(API_TOKEN_ENABLED_PROPERTY));
         if (tokenAuthEnabled) {
             String token = model.getConfig().getFirst(API_TOKEN_PROPERTY);
+            if (token == null || token.isEmpty()) {
+                token = getDefaultToken();
+            }
             httpClient.enableBearerTokenAuth(token);
         }
     }

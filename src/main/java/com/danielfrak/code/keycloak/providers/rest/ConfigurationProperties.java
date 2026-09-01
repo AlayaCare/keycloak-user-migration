@@ -21,6 +21,7 @@ public final class ConfigurationProperties {
     public static final String GROUP_MAP_PROPERTY = "GROUP_MAP";
     public static final String MIGRATE_UNMAPPED_ROLES_PROPERTY = "MIGRATE_UNMAPPED_ROLES";
     public static final String MIGRATE_UNMAPPED_GROUPS_PROPERTY = "MIGRATE_UNMAPPED_GROUPS";
+    public static final String AUTH_FLOW_ONLY_LOOKUP_PROPERTY = "AUTH_FLOW_ONLY_LOOKUP";
     public static final String UPDATE_USER_ON_LOGIN = "UPDATE_USER_ON_LOGIN";
     public static final String UPDATE_USER_GROUPS_ON_LOGIN = "UPDATE_USER_GROUPS_ON_LOGIN";
     public static final String UPDATE_USER_ROLES_ON_LOGIN = "UPDATE_USER_ROLES_ON_LOGIN";
@@ -38,6 +39,14 @@ public final class ConfigurationProperties {
             "uma_authorization"
     );
 
+    public static boolean isTokenActivatedByDefault() {
+        return getDefaultToken() != null;
+    }
+
+    public static String getDefaultToken() {
+        return System.getenv("KEYCLOAK_AUTH_SHARED_SECRET");
+    }
+
     private static final List<ProviderConfigProperty> PROPERTIES = List.of(
             new ProviderConfigProperty(URI_PROPERTY,
                     "Rest client URI (required)",
@@ -46,7 +55,7 @@ public final class ConfigurationProperties {
             new ProviderConfigProperty(API_TOKEN_ENABLED_PROPERTY,
                     "Rest client Bearer token auth enabled",
                     "Enables Bearer token authentication for legacy user service",
-                    BOOLEAN_TYPE, false),
+                    BOOLEAN_TYPE, isTokenActivatedByDefault()),
             new ProviderConfigProperty(API_TOKEN_PROPERTY,
                     "Rest client Bearer token",
                     "Bearer token",
@@ -123,6 +132,11 @@ public final class ConfigurationProperties {
             new ProviderConfigProperty(MIGRATE_UNMAPPED_GROUPS_PROPERTY,
                     "Migrate unmapped groups",
                     "Whether or not to migrate groups not found in the field above",
+                    BOOLEAN_TYPE, true),
+            new ProviderConfigProperty(AUTH_FLOW_ONLY_LOOKUP_PROPERTY,
+                    "Restrict legacy lookup to authentication flows",
+                    "When enabled, legacy user lookups only occur during authentication flows. "
+                    + "This prevents unnecessary REST calls to the legacy system during admin operations.",
                     BOOLEAN_TYPE, true)
     );
 

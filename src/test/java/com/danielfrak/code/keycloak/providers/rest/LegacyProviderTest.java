@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.danielfrak.code.keycloak.providers.rest.ConfigurationProperties.AUTH_FLOW_ONLY_LOOKUP_PROPERTY;
 import static com.danielfrak.code.keycloak.providers.rest.ConfigurationProperties.SEVER_FEDERATION_LINK;
 import static com.danielfrak.code.keycloak.providers.rest.ConfigurationProperties.UPDATE_USER_GROUPS_ON_LOGIN;
 import static com.danielfrak.code.keycloak.providers.rest.ConfigurationProperties.UPDATE_USER_ON_LOGIN;
@@ -70,7 +71,7 @@ class LegacyProviderTest {
                 legacyUserService, localUserLookup, userModelFactory, migrationConfiguration);
         var credentialValidationService =
                 new CredentialValidationService(session, legacyUserService, migrationConfiguration);
-        legacyProvider = new LegacyProvider(userMigrationService, credentialValidationService, migrationConfiguration);
+        legacyProvider = new LegacyProvider(session, userMigrationService, credentialValidationService, migrationConfiguration);
 
         lenient().when(session.getProvider(PasswordPolicyManagerProvider.class))
                 .thenReturn(passwordPolicyManagerProvider);
@@ -78,6 +79,20 @@ class LegacyProviderTest {
                 .thenReturn(userProvider);
         lenient().when(legacyUserService.findByUsername(anyString()))
                 .thenReturn(Optional.empty());
+
+        givenAuthFlowOnlyLookupDisabled();
+    }
+
+    private void givenAuthFlowOnlyLookupDisabled() {
+        MultivaluedHashMap<String, String> defaultConfig = new MultivaluedHashMap<>();
+        defaultConfig.put(AUTH_FLOW_ONLY_LOOKUP_PROPERTY, List.of("false"));
+        lenient().when(model.getConfig()).thenReturn(defaultConfig);
+    }
+
+    private void givenAuthFlowOnlyLookupEnabled() {
+        MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+        config.put(AUTH_FLOW_ONLY_LOOKUP_PROPERTY, List.of("true"));
+        lenient().when(model.getConfig()).thenReturn(config);
     }
 
     @Test
@@ -757,5 +772,55 @@ class LegacyProviderTest {
     void removeUserShouldReturnTrueForNullUser() {
         var result = legacyProvider.removeUser(realmModel, null);
         assertTrue(result);
+    }
+
+    @Test
+    void shouldSkipLegacyLookupByUsernameOutsideAuthFlow() {
+        givenAuthFlowOnlyLookupEnabled();
+
+        var result = legacyProvider.getUserByUsername(realmModel, "user");
+
+        assertNull(result);
+    }
+
+    @Test
+    void shouldSkipLegacyLookupByEmailOutsideAuthFlow() {
+        givenAuthFlowOnlyLookupEnabled();
+
+        var result = legacyProvider.getUserByEmail(realmModel, "user@test.com");
+
+        assertNull(result);
+    }
+
+    @Test
+    void shouldAllowLegacyLookupOutsideAuthFlowWhenSettingDisabled() {
+        givenAuthFlowOnlyLookupDisabled();
+
+        final String username = "user";
+        final LegacyUser user = withId();
+        when(legacyUserService.findByUsername(username))
+                .thenReturn(Optional.of(user));
+        when(userModelFactory.create(user, realmModel))
+                .thenReturn(userModel);
+
+        var result = legacyProvider.getUserByUsername(realmModel, username);
+
+        assertEquals(userModel, result);
+    }
+
+    @Test
+    void shouldAllowLegacyLookupByEmailOutsideAuthFlowWhenSettingDisabled() {
+        givenAuthFlowOnlyLookupDisabled();
+
+        final String email = "user@test.com";
+        final LegacyUser user = withId();
+        when(legacyUserService.findByEmail(email))
+                .thenReturn(Optional.of(user));
+        when(userModelFactory.create(user, realmModel))
+                .thenReturn(userModel);
+
+        var result = legacyProvider.getUserByEmail(realmModel, email);
+
+        assertEquals(userModel, result);
     }
 }
